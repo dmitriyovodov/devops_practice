@@ -155,7 +155,7 @@
       include_vars:
         file: ./variables.yml
   
-    - name: populate /etc/environment
+    - name: Set env variables
       lineinfile:
         path: "/etc/environment"
         state: present
@@ -163,6 +163,19 @@
         line: "{{ item.key }}={{ item.value}}"
       with_items: "{{ os_environment }}"
       become: yes
+    
+    - name: Enable root ssh login
+      become: yes
+      lineinfile:
+        path: "/etc/ssh/sshd_config"
+        insertafter: EOF
+        line: "PermitRootLogin yes"
+       
+    - name: Restart ssh
+      become: yes
+      service:
+        name: ssh
+        state: restarted
     
     - name: Install git
       become: yes
