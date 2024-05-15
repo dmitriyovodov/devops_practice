@@ -1,0 +1,182 @@
+---
+- name: Installing necessary packages for Telegram bot
+  hosts: master_server
+  tasks:
+    - name: Install Python
+      become: yes
+      apt:
+        name: python3
+        state: present
+
+    - name: Install pip
+      become: yes
+      apt:
+        name: python3-pip
+        state: present
+
+    - name: Installing required Python packages
+      become: yes
+      pip:
+        name: "{{ item }}"
+      with_items:
+        - paramiko
+        - psycopg2-binary
+        - python-telegram-bot==13.7
+        - urllib3==1.26.15
+        - python-dotenv
+
+- name: Deploy PostgreSQL database on master and modify .conf files for replication
+  hosts: master_server
+  tasks:
+    - name: Include variables
+      include_vars:
+        file: ./variables.yml
+    
+    - name: Install PostgreSQL
+      become: yes
+      apt:
+        name: postgresql
+        state: present
+        
+    - name: Install PostgreSQL-contrib
+      become: yes
+      apt:
+        name: postgresql-contrib
+        state: present
+
+    - name: Create database {{ DB_DATABASE }}
+      become: yes
+      become_user: postgres
+      postgresql_db:
+        name: "{{ DB_DATABASE }}"
+
+    - name: Create table "numbers"
+      become: yes
+      become_user: postgres
+      postgresql_query:
+        db: "{{ DB_DATABASE }}"
+        query: "CREATE TABLE IF NOT EXISTS numbers (id serial PRIMARY KEY, number varchar(255));"
+
+    - name: Create table "emails"
+      become: yes
+      become_user: postgres
+      postgresql_query:
+        db: emails_and_numbers
+        query: "CREATE TABLE IF NOT EXISTS emails (id serial PRIMARY KEY, email varchar(255));"
+        
+    - name: Create replication user
+      become: yes
+      become_user: postgres
+      command: "psql -c \"CREATE USER {{repl_user}} REPLICATION LOGIN ENCRYPTED PASSWORD '{{repl_pass}}';\""
+      args:
+        creates: "/var/lib/pgsql/.pgpass"
+      ignore_errors: yes
+      
+    - name: Set postgresql.conf for replication
+      become: yes
+      blockinfile:
+        path: /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf
+        block: |
+          listen_addresses = '*'
+          port = 5432
+          archive_mode = on
+          archive_command = 'cp %p /oracle/pg_data/archive/%f'
+          max_wal_senders = 10
+          wal_level = replica
+          wal_log_hints = on
+          
+    - name: Set pg_hba.conf for replication
+      become: yes
+      lineinfile:
+        path: "/etc/postgresql/14/main/pg_hba.conf"
+        insertafter: EOF
+        line: "{{ item }}"
+      loop:
+        - "host {{ DB_DATABASE }} postgres {{ master }}/32 scram-sha-256"
+        - "host replication {{repl_user}}  {{ slave }}/32 trust"
+        
+    - name: Restart PostgreSQL
+      become: yes
+      service:
+        name: postgresql
+        state: restarted
+
+- name: Set up PostgreSQL and replication on slave server
+  become: yes
+  hosts: slave_server
+  tasks:
+    - name: Include variables
+      include_vars:
+        file: ./variables.yml
+        
+    - name: Install PostgreSQL
+      become: yes
+      apt:
+        name: postgresql
+        state: present
+        
+    - name: Install PostgreSQL-contrib
+      become: yes
+      apt:
+        name: postgresql-contrib
+        state: present
+
+    - name: Setup postgresql.conf
+      become: yes
+      blockinfile:
+        path: /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf
+        block: |
+          listen_addresses = 'localhost, {{ master }}'
+
+    - name: Stop PostgreSQL
+      become: yes
+      service:
+        name: postgresql
+        state: stopped
+
+    - name: Delete local postgresql data files
+      command: rm -r /var/lib/postgresql/{{ postgresql_version }}/main
+
+    - name: Do pg_basebackup
+      command: pg_basebackup -R -h {{ master }} -U {{repl_user}}  -D /var/lib/postgresql/{{ postgresql_version }}/main -P
+      become_user: postgres
+
+    - name: Start PostgreSQL
+      become: yes
+      service:
+        name: postgresql
+        state: started
+
+- name: Download bot from githab, setting env variables and starting bot
+  hosts: master_server
+  tasks:
+    - name: Include variables
+      include_vars:
+        file: ./variables.yml
+  
+    - name: populate /etc/environment
+      lineinfile:
+        path: "/etc/environment"
+        state: present
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value}}"
+      with_items: "{{ os_environment }}"
+      become: yes
+    
+    - name: Install git
+      become: yes
+      apt:
+        name: git
+        state: present
+        
+    - name: Clone code from GitHub
+      git:
+        repo: https://github.com/dmitriyovodov/devops_practice.git
+        dest: /home/ansible/bot
+    - name: Starting bot
+      become: yes
+      command: python /home/ansible/bot/bot/bot.py
+      
+        
+
+
