@@ -153,7 +153,7 @@ def get_services(update: Update, context):
 
 def get_repl_logs(update: Update, context):
     client = ssh_conn()
-    stdin, stdout, stderr = client.exec_command('docker logs db 2>&1 | grep -i repl')
+    stdin, stdout, stderr = client.exec_command('cat /var/log/postgresql/postgresql-14-main.log | grep -a repl | tail')
     data = stdout.read() + stderr.read()
     data = str(data).replace('\\n', '\n').replace('\\t', '\t')[2:-1]
     update.message.reply_text(data)
