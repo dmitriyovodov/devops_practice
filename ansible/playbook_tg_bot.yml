@@ -175,7 +175,7 @@
         dest: /home/ansible/bot
     - name: Starting bot
       become: yes
-      command: python /home/ansible/bot/bot/bot.py
+      command: python /home/ansible/bot/bot.py
       
         
 
