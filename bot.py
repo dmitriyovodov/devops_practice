@@ -23,6 +23,8 @@ db_password = os.getenv("DB_PASSWORD")
 db_port = os.getenv("DB_PORT")
 db_database = os.getenv("DB_DATABASE")
 
+db_vers = os.getenv("P_VERS_M")
+
 gl_email_list = []
 gl_number_list = []
 
@@ -153,7 +155,7 @@ def get_services(update: Update, context):
 
 def get_repl_logs(update: Update, context):
     client = ssh_conn()
-    stdin, stdout, stderr = client.exec_command('cat /var/log/postgresql/postgresql-14-main.log | grep -a repl | tail')
+    stdin, stdout, stderr = client.exec_command(f'cat /var/log/postgresql/postgresql-{db_vers}-main.log | grep -a repl | tail')
     data = stdout.read() + stderr.read()
     data = str(data).replace('\\n', '\n').replace('\\t', '\t')[2:-1]
     update.message.reply_text(data)
