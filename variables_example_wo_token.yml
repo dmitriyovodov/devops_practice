@@ -1,0 +1,64 @@
+---
+master: 192.168.31.113
+
+
+slave: 192.168.31.141
+
+repl_user: repl_user
+repl_pass: P@ssw0rd
+
+postgresql_version_master: 14
+postgresql_version_slave: 14
+
+
+#Enviromental variables from .env file
+
+TOKEN: ''
+RM_HOST: "192.168.31.113"
+RM_PORT: "22"
+RM_USER: "root"
+RM_PASSWORD: "P@ssw0rd"
+DB_USER: "postgres"
+DB_PASSWORD: "P@ssw0rd"
+DB_HOST: "127.0.0.1"
+DB_PORT: "5432"
+DB_DATABASE: "emails_and_numbers"
+DB_REPL_USER: "postgres"
+DB_REPL_PASSWORD: "P@ssw0rd"
+DB_REPL_HOST: "192.168.31.141"
+DB_REPL_PORT: "5433"
+
+#Setting up variables
+
+os_environment:
+  - key: TOKEN
+    value : ''  
+  - key: RM_HOST
+    value : "192.168.31.113"
+  - key: RM_PORT 
+    value : "22"
+  - key: RM_USER
+    value : "root"
+  - key: RM_PASSWORD 
+    value : "P@ssw0rd"
+  - key: DB_USER
+    value : "postgres"
+  - key: DB_PASSWORD 
+    value : "P@ssw0rd"
+  - key: DB_HOST
+    value : "127.0.0.1"
+  - key: DB_PORT 
+    value : "5432"
+  - key: DB_DATABASE 
+    value : "emails_and_numbers"
+  - key: DB_REPL_USER 
+    value : "postgres"
+  - key: DB_REPL_PASSWORD
+    value : "P@ssw0rd"
+  - key: DB_REPL_HOST 
+    value : "192.168.31.141"
+  - key: DB_REPL_PORT 
+    value : "5433"
+  - key: P_VERS_M #Needed for get_repl function
+    value : 14
+
