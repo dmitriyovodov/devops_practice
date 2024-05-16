@@ -75,7 +75,7 @@
     - name: Set postgresql.conf for replication
       become: yes
       blockinfile:
-        path: /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf
+        path: /etc/postgresql/{{ postgresql_version_master }}/main/postgresql.conf
         block: |
           listen_addresses = '*'
           port = 5432
@@ -89,7 +89,7 @@
     - name: Set pg_hba.conf for replication
       become: yes
       lineinfile:
-        path: "/etc/postgresql/{{ postgresql_version }}//main/pg_hba.conf"
+        path: "/etc/postgresql/{{ postgresql_version_master }}//main/pg_hba.conf"
         insertafter: EOF
         line: "{{ item }}"
       loop:
@@ -130,7 +130,7 @@
     - name: Setup postgresql.conf
       become: yes
       blockinfile:
-        path: /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf
+        path: /etc/postgresql/{{ postgresql_version_slave }}/main/postgresql.conf
         block: |
           listen_addresses = 'localhost, {{ master }}'
 
@@ -141,10 +141,10 @@
         state: stopped
 
     - name: Delete local postgresql data files
-      command: rm -r /var/lib/postgresql/{{ postgresql_version }}/main
+      command: rm -r /var/lib/postgresql/{{ postgresql_version_slave }}/main
 
     - name: Do pg_basebackup
-      command: pg_basebackup -R -h {{ master }} -U {{repl_user}}  -D /var/lib/postgresql/{{ postgresql_version }}/main -P
+      command: pg_basebackup -R -h {{ master }} -U {{repl_user}}  -D /var/lib/postgresql/{{ postgresql_version_slave }}/main -P
       become_user: postgres
 
     - name: Start PostgreSQL
