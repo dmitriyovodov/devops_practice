@@ -129,7 +129,7 @@ def get_critical(update: Update, context):
 
 def get_ps(update: Update, context):
     client = ssh_conn()
-    stdin, stdout, stderr = client.exec_command('ps')
+    stdin, stdout, stderr = client.exec_command('ps | head')
     data = stdout.read() + stderr.read()
     data = str(data).replace('\\n', '\n').replace('\\t', '\t')[2:-1]
     update.message.reply_text(data)
