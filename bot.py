@@ -83,7 +83,7 @@ def get_uptime(update: Update, context):
 
 def get_df(update: Update, context):
     client = ssh_conn()
-    stdin, stdout, stderr = client.exec_command('df')
+    stdin, stdout, stderr = client.exec_command('df | head')
     data = stdout.read() + stderr.read()
     data = str(data).replace('\\n', '\n').replace('\\t', '\t')[2:-1]
     update.message.reply_text(data)
@@ -139,7 +139,7 @@ def get_ps(update: Update, context):
 
 def get_ss(update: Update, context):
     client = ssh_conn()
-    stdin, stdout, stderr = client.exec_command('ss -tunlp')
+    stdin, stdout, stderr = client.exec_command('ss -tunlp | head')
     data = stdout.read() + stderr.read()
     data = str(data).replace('\\n', '\n').replace('\\t', '\t')[2:-1]
     update.message.reply_text(data)
